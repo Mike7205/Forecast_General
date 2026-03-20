@@ -26,7 +26,7 @@ with col_btn:
     if st.button("📊 Tech Analytical Desktop", use_container_width=True, type="secondary"):
         st.switch_page("pages/Tech_Analytical_Desktop.py")
 with col_info:
-    st.info("Model LSTM trenowany na 1000 ostatnich sesjach | Prognoza 5 dni roboczych do przodu")
+    st.info("Model NN trenowany na 1000 ostatnich sesjach | Prognoza 5 dni roboczych do przodu")
 st.markdown("---")
 
 # ── Tickery ──────────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ def build_chart(hist, fore, name, ticker):
         fore_dates = [last_date] + list(fore["Date"])
         fore_vals  = [last_price] + list(fore["Forecast"])
         fig.add_trace(go.Scatter(
-            x=fore_dates, y=fore_vals, name="Prognoza LSTM D+5",
+            x=fore_dates, y=fore_vals, name="Prognoza NN D+5",
             line=dict(color="#ff7f0e", width=2.5, dash="dash"),
             mode="lines+markers",
             marker=dict(size=9, symbol="circle", color="#ff7f0e",
@@ -119,14 +119,14 @@ for i, (ticker, name) in enumerate(FORE_TICKERS.items()):
             st.markdown("**Prognoza D+1 → D+5:**")
             fore = None
             if retrain:
-                with st.spinner(f"Trening LSTM dla {name}..."):
+                with st.spinner(f"Trening NN dla {name}..."):
                     try:
                         get_forecast.clear()
                         fore = get_forecast_retrain(ticker)
                     except Exception as e:
                         st.error(f"Błąd: {e}")
             else:
-                with st.spinner(f"Ładuję/trenuję model {name}..."):
+                with st.spinner(f"Ładuję model {name}..."):
                     try:
                         fore = get_forecast(ticker)
                     except Exception as e:
@@ -147,4 +147,4 @@ for i, (ticker, name) in enumerate(FORE_TICKERS.items()):
             st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
 st.markdown("---")
-st.caption("Dane © Yahoo Finance | Model LSTM D+5 | streamlit · plotly · tensorflow · yfinance")
+st.caption("Dane © Yahoo Finance | Model NN D+5 | streamlit · plotly · yfinance")
