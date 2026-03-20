@@ -99,7 +99,7 @@ def build_chart(hist: pd.DataFrame, fore, name: str, ticker: str) -> go.Figure:
         hovertemplate="%{x|%Y-%m-%d}<br>Close: %{y:,.4f}<extra></extra>"
     ))
 
-    if fore is not None and not fore.empty:
+    if fore is not None and not fore.empty and not hist.empty:
         last_date  = hist["Date"].iloc[-1]
         last_price = float(hist["Close"].iloc[-1])
 
@@ -152,8 +152,8 @@ tabs = st.tabs(list(FORE_TICKERS.values()))
 for i, (ticker, name) in enumerate(FORE_TICKERS.items()):
     with tabs[i]:
         hist = get_hist(ticker, hist_n)
-        last_price = float(hist["Close"].iloc[-1]) if not hist.empty else float("nan")
-        prev_price = float(hist["Close"].iloc[-2]) if len(hist) > 1 else last_price
+        last_price = float(hist["Close"].iloc[-1]) if len(hist) >= 1 else float("nan")
+        prev_price = float(hist["Close"].iloc[-2]) if len(hist) >= 2 else last_price
         delta_pct  = (last_price - prev_price) / prev_price * 100 if prev_price else 0.0
 
         col_m, col_c = st.columns([1, 4])
@@ -189,8 +189,11 @@ for i, (ticker, name) in enumerate(FORE_TICKERS.items()):
                     )
 
         with col_c:
-            fig = build_chart(hist, fore, name, ticker)
-            st.plotly_chart(fig, use_container_width=True, theme="streamlit")
+            if hist.empty:
+                st.warning(f"Brak danych historycznych dla {name} ({ticker})")
+            else:
+                fig = build_chart(hist, fore, name, ticker)
+                st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
 st.markdown("---")
 st.caption("Dane Yahoo Finance | Model NN D+5 | streamlit plotly sklearn yfinance")
