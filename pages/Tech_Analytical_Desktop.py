@@ -85,7 +85,7 @@ comm_dict = {
 # ────────────────────────────────────────────────
 # Cache danych
 # ────────────────────────────────────────────────
-@st.cache_data(ttl=3600, show_spinner="Pobieranie danych z Yahoo Finance...")
+@st.cache_data(ttl=3600, show_spinner="Fetching data from Yahoo Finance...")
 def get_data(ticker: str) -> pd.DataFrame:
     df = yf.download(ticker, start='2000-01-01', end=today, interval='1d', progress=False)
     df = df.reset_index()
@@ -127,7 +127,7 @@ def calc_stochastic(df: pd.DataFrame, k: int = 14, d: int = 3):
 # Sidebar – tylko wybór instrumentu
 # ────────────────────────────────────────────────
 with st.sidebar:
-    st.subheader("Wybierz instrument")
+    st.subheader("Select instrument")
     selected_name = st.radio(
         "Instrument",
         options=list(comm_dict.values()),
@@ -136,7 +136,7 @@ with st.sidebar:
     )
     ticker = next(k for k, v in comm_dict.items() if v == selected_name)
     st.markdown("---")
-    st.caption("© 2026 Michał Leśniewski")
+    st.caption("© 2026 Michal Lesniewski")
 
 # ────────────────────────────────────────────────
 # Dane
@@ -160,12 +160,12 @@ prev_close = round(float(data['Close'].iloc[-2]), 2) if rows > 1 else last_close
 delta_pct  = round((last_close - prev_close) / prev_close * 100, 2) if prev_close else 0.0
 
 metrics = pd.DataFrame({
-    " ": ["Wartość"],
+    " ": ["Value"],
     "Start":     [start_dt],
-    "Koniec":    [end_dt],
+    "End":    [end_dt],
     "Max Close": [close_max],
     "Min Close": [close_min],
-    "Ostatnia":  [last_close]
+    "Last":  [last_close]
 }).set_index(" ")
 
 # ────────────────────────────────────────────────
@@ -176,10 +176,10 @@ st.subheader(f"{selected_name}  ({ticker})", divider="blue")
 left, right = st.columns([5, 4])
 
 with left:
-    st.markdown("**Podstawowe informacje**")
+    st.markdown("**Basic information**")
     st.dataframe(metrics, use_container_width=True)
 
-    show_ma    = st.checkbox("Średnie ruchome (SMA)",  value=False)
+    show_ma    = st.checkbox("Moving Averages (SMA)",  value=False)
     show_bb    = st.checkbox("Bollinger Bands",         value=False)
     show_stoch = st.checkbox("Stochastic Oscillator",  value=False)
     show_rsi   = st.checkbox("RSI",                    value=False)
@@ -187,12 +187,12 @@ with left:
 
 with right:
     col_m1, col_m2 = st.columns(2)
-    col_m1.metric("Ostatnia cena", f"{last_close:,.2f}", f"{delta_pct:+.2f}%")
-    col_m2.metric("Liczba sesji",  f"{rows:,}")
+    col_m1.metric("Last cena", f"{last_close:,.2f}", f"{delta_pct:+.2f}%")
+    col_m2.metric("Sessions",  f"{rows:,}")
 
     max_days = len(data) - 1
     lookback_days = st.slider(
-        "Okres analizy (liczba dni wstecz)",
+        "Analysis period (days back)",
         min_value=30,
         max_value=max_days,
         value=min(400, max_days),
@@ -205,28 +205,28 @@ with right:
 if show_ma:
     col_a, col_b = st.columns(2)
     with col_a:
-        short_period = st.number_input("Krótka SMA", min_value=3,  value=10, step=1)
+        short_period = st.number_input("Short SMA", min_value=3,  value=10, step=1)
     with col_b:
-        long_period  = st.number_input("Długa SMA",  min_value=10, value=50, step=5)
+        long_period  = st.number_input("Long SMA",  min_value=10, value=50, step=5)
 
 if show_bb:
     col_c, col_d = st.columns(2)
     with col_c:
-        bb_period = st.number_input("BB okres",    min_value=5,   value=20, step=1)
+        bb_period = st.number_input("BB period",    min_value=5,   value=20, step=1)
     with col_d:
-        bb_std    = st.number_input("BB odch. std", min_value=0.5, max_value=4.0, value=2.0, step=0.5)
+        bb_std    = st.number_input("BB std dev", min_value=0.5, max_value=4.0, value=2.0, step=0.5)
 
 if show_stoch:
     col_e, col_f = st.columns(2)
     with col_e:
-        stoch_k = st.number_input("%K okres",       min_value=5, value=14)
+        stoch_k = st.number_input("%K period",       min_value=5, value=14)
     with col_f:
-        stoch_d = st.number_input("%D wygładzanie", min_value=2, value=3)
+        stoch_d = st.number_input("%D smoothing", min_value=2, value=3)
 
 if show_rsi:
     col_g, _ = st.columns(2)
     with col_g:
-        rsi_period = st.number_input("RSI okres", min_value=2, value=14, step=1)
+        rsi_period = st.number_input("RSI period", min_value=2, value=14, step=1)
 
 if show_macd:
     col_h, col_i, col_j = st.columns(3)
@@ -265,7 +265,7 @@ if show_macd:
 # ────────────────────────────────────────────────
 # Subploty Plotly – dynamiczna liczba wierszy
 # ────────────────────────────────────────────────
-subplot_defs = [("Cena", 4)]
+subplot_defs = [("Price", 4)]
 if show_stoch: subplot_defs.append(("Stochastic", 2))
 if show_rsi:   subplot_defs.append(("RSI",         2))
 if show_macd:  subplot_defs.append(("MACD",        2))
@@ -278,7 +278,7 @@ fig = make_subplots(
     subplot_titles=[s[0] for s in subplot_defs]
 )
 
-# ── Panel 1: Cena ────────────────────────────────
+# ── Panel 1: Price ────────────────────────────────
 fig.add_trace(go.Scatter(
     x=df_view['Date'], y=df_view['Close'],
     name="Close", line=dict(color='#1f77b4', width=1.8)
@@ -297,15 +297,15 @@ if show_ma:
 if show_bb:
     fig.add_trace(go.Scatter(
         x=df_view['Date'], y=df_view['BB_upper'],
-        name="BB górna", line=dict(color="rgba(255,165,0,0.7)", dash="dash", width=1.2)
+        name="BB upper", line=dict(color="rgba(255,165,0,0.7)", dash="dash", width=1.2)
     ), row=1, col=1)
     fig.add_trace(go.Scatter(
         x=df_view['Date'], y=df_view['BB_mid'],
-        name="BB środkowa", line=dict(color="rgba(255,165,0,0.45)", dash="dot", width=1.0)
+        name="BB middle", line=dict(color="rgba(255,165,0,0.45)", dash="dot", width=1.0)
     ), row=1, col=1)
     fig.add_trace(go.Scatter(
         x=df_view['Date'], y=df_view['BB_lower'],
-        name="BB dolna",
+        name="BB lower",
         line=dict(color="rgba(255,165,0,0.7)", dash="dash", width=1.2),
         fill='tonexty', fillcolor='rgba(255,165,0,0.07)'
     ), row=1, col=1)
@@ -315,12 +315,12 @@ if show_stoch:
     sell_zone = (df_view['%K'] > 80) & (df_view['%K'] < df_view['%D'])
     fig.add_trace(go.Scatter(
         x=df_view[buy_zone]['Date'], y=df_view[buy_zone]['Close'],
-        mode='markers', name='Sygnał kupna',
+        mode='markers', name='Buy signal',
         marker=dict(color='lime', size=9, symbol='triangle-up')
     ), row=1, col=1)
     fig.add_trace(go.Scatter(
         x=df_view[sell_zone]['Date'], y=df_view[sell_zone]['Close'],
-        mode='markers', name='Sygnał sprzedaży',
+        mode='markers', name='Sell signal',
         marker=dict(color='red', size=9, symbol='triangle-down')
     ), row=1, col=1)
 
@@ -375,11 +375,11 @@ st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 # ────────────────────────────────────────────────
 # ECharts – świecowy candlestick
 # ────────────────────────────────────────────────
-with st.expander("Wersja ECharts – świecowy (candlestick)"):
+with st.expander("ECharts – Candlestick view"):
     df_clean = df_view.dropna(subset=['Open', 'High', 'Low', 'Close']).reset_index(drop=True)
 
     if df_clean.empty:
-        st.warning(f"Brak kompletnych danych OHLC dla {selected_name} w wybranym okresie.")
+        st.warning(f"No complete OHLC data for {selected_name} in selected period.")
     else:
         candle_data = df_clean.apply(
             lambda row: [
@@ -393,7 +393,7 @@ with st.expander("Wersja ECharts – świecowy (candlestick)"):
 
         options = {
             "title": {
-                "text": f"{selected_name} – świecowy, ostatnie {len(df_clean)} dni",
+                "text": f"{selected_name} – candlestick, last {len(df_clean)} dni",
                 "left": "center"
             },
             "tooltip": {
@@ -415,7 +415,7 @@ with st.expander("Wersja ECharts – świecowy (candlestick)"):
                 "containLabel": True
             },
             "series": [{
-                "name": "Świece",
+                "name": "Candles",
                 "type": "candlestick",
                 "data": candle_data,
                 "itemStyle": {
@@ -429,4 +429,4 @@ with st.expander("Wersja ECharts – świecowy (candlestick)"):
 
         st_echarts(options, height="580px", key=f"echart_candles_{ticker}_{lookback_days}")
 
-st.caption("Dane © Yahoo Finance | Aplikacja korzysta z yfinance i streamlit-echarts")
+st.caption("Data © Yahoo Finance | App uses yfinance and streamlit-echarts")

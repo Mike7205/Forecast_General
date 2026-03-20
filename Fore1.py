@@ -6,11 +6,11 @@ import yfinance as yf
 from datetime import date
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Konfiguracja strony
+# Page config
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
     layout="wide",
-    page_title="Global Economy Dashboard – Forecast",
+    page_title="Forecast Desktop",
     page_icon="🔮"
 )
 
@@ -28,19 +28,19 @@ st.markdown("""
 st.title("Global Economy Indicators – Technical Analysis Dashboard")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Nawigacja
+# Navigation
 # ─────────────────────────────────────────────────────────────────────────────
 col_btn, col_info, _ = st.columns([2, 4, 4])
 with col_btn:
     if st.button("📊 Tech Analytical Desktop", use_container_width=True, type="secondary"):
         st.switch_page("pages/Tech_Analytical_Desktop.py")
 with col_info:
-    st.info("Model NN trenowany na 1000 ostatnich sesjach | Prognoza 5 dni roboczych do przodu")
+    st.info("Neural Network model trained on last 1000 sessions | 5 business days forecast")
 
 st.markdown("---")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Tickery
+# Tickers
 # ─────────────────────────────────────────────────────────────────────────────
 FORE_TICKERS = {
     "^GSPC":    "SP_500",
@@ -56,16 +56,16 @@ FORE_TICKERS = {
 # Sidebar
 # ─────────────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.subheader("Ustawienia prognozy")
-    hist_n  = st.slider("Sesje historyczne na wykresie", 100, 600, 250, 25)
-    retrain = st.button("Przetrenuj modele od nowa", type="primary", use_container_width=True)
+    st.subheader("Forecast Settings")
+    hist_n  = st.slider("Historical sessions on chart", 30, 600, 30, 10)
+    retrain = st.button("Retrain models", type="primary", use_container_width=True)
     st.markdown("---")
-    st.caption("Model: Neural Network (128/64/32)\nOkno: 60 sesji | Horyzont: 5 dni roboczych\nDane: Yahoo Finance")
+    st.caption("Model: Neural Network (128/64/32)\nWindow: 60 sessions | Horizon: 5 business days\nData: Yahoo Finance")
     st.markdown("---")
     st.caption("© 2026 Michal Lesniewski")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Funkcje pomocnicze
+# Helper functions
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=3600, show_spinner=False)
 def get_hist(ticker: str, n: int) -> pd.DataFrame:
@@ -91,7 +91,7 @@ def get_forecast_retrain(ticker: str) -> pd.DataFrame:
 def build_chart(hist: pd.DataFrame, fore, name: str, ticker: str) -> go.Figure:
     fig = go.Figure()
 
-    # Historyczny Close
+    # Historical Close
     fig.add_trace(go.Scatter(
         x=hist["Date"], y=hist["Close"],
         name="Close",
@@ -108,15 +108,15 @@ def build_chart(hist: pd.DataFrame, fore, name: str, ticker: str) -> go.Figure:
 
         fig.add_trace(go.Scatter(
             x=fore_dates, y=fore_vals,
-            name="Prognoza NN D+5",
-            line=dict(color="#ff7f0e", width=2.5, dash="dash"),
+            name="NN Forecast D+5",
+            line=dict(color="#d62728", width=2.5, dash="dash"),
             mode="lines+markers",
-            marker=dict(size=9, symbol="circle", color="#ff7f0e",
+            marker=dict(size=9, symbol="circle", color="#d62728",
                         line=dict(color="white", width=1.5)),
-            hovertemplate="%{x}<br>Prognoza: %{y:,.4f}<extra></extra>"
+            hovertemplate="%{x}<br>Forecast: %{y:,.4f}<extra></extra>"
         ))
 
-        # Linia "Dzis" – add_shape zamiast add_vline (Plotly 6+ kompatybilne)
+        # Today separator – add_shape (Plotly 6+ compatible, avoids add_vline bug)
         x_str = pd.Timestamp(last_date).strftime("%Y-%m-%d")
         fig.add_shape(
             type="line",
@@ -125,9 +125,8 @@ def build_chart(hist: pd.DataFrame, fore, name: str, ticker: str) -> go.Figure:
             line=dict(dash="dot", color="gray", width=1.2)
         )
         fig.add_annotation(
-            x=x_str, y=1,
-            xref="x", yref="paper",
-            text="Dzis", showarrow=False,
+            x=x_str, y=1, xref="x", yref="paper",
+            text="Today", showarrow=False,
             font=dict(color="gray", size=11),
             xanchor="left", yanchor="top"
         )
@@ -145,7 +144,7 @@ def build_chart(hist: pd.DataFrame, fore, name: str, ticker: str) -> go.Figure:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Glowna petla – zakladki dla kazdego tickera
+# Main loop – tabs per ticker
 # ─────────────────────────────────────────────────────────────────────────────
 tabs = st.tabs(list(FORE_TICKERS.values()))
 
@@ -160,22 +159,22 @@ for i, (ticker, name) in enumerate(FORE_TICKERS.items()):
 
         with col_m:
             st.metric(label=name, value=f"{last_price:,.4f}", delta=f"{delta_pct:+.2f}%")
-            st.markdown("**Prognoza D+1 to D+5:**")
+            st.markdown("**Forecast D+1 to D+5:**")
 
             fore = None
             if retrain:
-                with st.spinner(f"Trening NN dla {name}..."):
+                with st.spinner(f"Training NN for {name}..."):
                     try:
                         get_forecast.clear()
                         fore = get_forecast_retrain(ticker)
                     except Exception as e:
-                        st.error(f"Blad treningu: {e}")
+                        st.error(f"Training error: {e}")
             else:
-                with st.spinner(f"Laduje model dla {name}..."):
+                with st.spinner(f"Loading model for {name}..."):
                     try:
                         fore = get_forecast(ticker)
                     except Exception as e:
-                        st.error(f"Blad prognozy: {e}")
+                        st.error(f"Forecast error: {e}")
 
             if fore is not None:
                 for _, row in fore.iterrows():
@@ -190,10 +189,10 @@ for i, (ticker, name) in enumerate(FORE_TICKERS.items()):
 
         with col_c:
             if hist.empty:
-                st.warning(f"Brak danych historycznych dla {name} ({ticker})")
+                st.warning(f"No data available for {name} ({ticker})")
             else:
                 fig = build_chart(hist, fore, name, ticker)
                 st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
 st.markdown("---")
-st.caption("Dane Yahoo Finance | Model NN D+5 | streamlit plotly sklearn yfinance")
+st.caption("Data © Yahoo Finance | NN D+5 Forecast | streamlit · plotly · sklearn · yfinance")
