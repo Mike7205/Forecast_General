@@ -88,7 +88,14 @@ def build_chart(hist, fore, name, ticker):
                         line=dict(color="white", width=1.5)),
             hovertemplate="%{x}<br>Prognoza: %{y:,.4f}<extra></extra>"
         ))
-        fig.add_vline(x=str(last_date), line_dash="dot", line_color="gray",
+        x_str = pd.Timestamp(last_date).strftime("%Y-%m-%d")
+        fig.add_shape(type="line", x0=x_str, x1=x_str, y0=0, y1=1,
+                      xref="x", yref="paper",
+                      line=dict(dash="dot", color="gray", width=1.2))
+        fig.add_annotation(x=x_str, y=1, xref="x", yref="paper",
+                           text="Dziś", showarrow=False,
+                           font=dict(color="gray", size=11),
+                           xanchor="left", yanchor="top"), line_dash="dot", line_color="gray",
                       line_width=1.2, annotation_text="Dziś",
                       annotation_position="top right", annotation_font_color="gray")
     fig.update_layout(
